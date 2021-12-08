@@ -1,24 +1,13 @@
 package net.minecraft.src;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Properties;
-
+import java.util.Iterator;
 import org.lwjgl.opengl.GL11;
-
-import net.minecraft.client.Minecraft;
 
 public abstract class InventoryEffectRenderer extends GuiContainer
 {
-    private boolean hasActivePotionEffects;
+    private boolean field_74222_o;
 
     public InventoryEffectRenderer(Container par1Container)
     {
@@ -34,14 +23,12 @@ public abstract class InventoryEffectRenderer extends GuiContainer
 
         if (!this.mc.thePlayer.getActivePotionEffects().isEmpty())
         {
-        	Properties config = loadConfig();
-        	String potionPush = config.getProperty("potionpush", "auto");
-        	if (potionPush.equals("true")) {
-		        this.guiLeft = 160 + (this.width - this.xSize - 200) / 2;
-        	} else if (potionPush.equals("auto")) {
+        	if (PotionHUD.potionPush.equals("true")) {
+	            this.guiLeft = 160 + (this.width - this.xSize - 200) / 2;
+        	} else if (PotionHUD.potionPush.equals("auto")) {
         		this.guiLeft = Math.max(this.guiLeft, 176);
         	}
-        	this.hasActivePotionEffects = true;
+        	this.field_74222_o = true;
         }
     }
 
@@ -52,7 +39,7 @@ public abstract class InventoryEffectRenderer extends GuiContainer
     {
         super.drawScreen(par1, par2, par3);
 
-        if (this.hasActivePotionEffects)
+        if (this.field_74222_o)
         {
             this.displayDebuffEffects();
         }
@@ -63,117 +50,55 @@ public abstract class InventoryEffectRenderer extends GuiContainer
      */
     private void displayDebuffEffects()
     {
-        int i = this.guiLeft - 124;
-        int j = this.guiTop;
-        Collection<PotionEffect> collection = this.mc.thePlayer.getActivePotionEffects();
+        int var1 = this.guiLeft - 124;
+        int var2 = this.guiTop;
+        Collection var4 = this.mc.thePlayer.getActivePotionEffects();
 
-        if (!collection.isEmpty())
+        if (!var4.isEmpty())
         {
             GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             GL11.glDisable(GL11.GL_LIGHTING);
-            int l = 33;
+            int var5 = 33;
 
-            if (collection.size() > 5)
+            if (var4.size() > 5)
             {
-                l = 132 / (collection.size() - 1);
+                var5 = 132 / (var4.size() - 1);
             }
-            
-            ArrayList<PotionEffect> effectlist = sortPotionByDuration(collection);
-            for (PotionEffect potioneffect : effectlist)
-            {
-                Potion potion = Potion.potionTypes[potioneffect.getPotionID()];
+
+            ArrayList<PotionEffect> effectList = PotionHUD.sortPotionByDuration(var4);
+            for (PotionEffect effect : effectList) {
+                Potion potion = Potion.potionTypes[effect.getPotionID()];
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                 this.mc.renderEngine.bindTexture("/gui/inventory.png");
-                this.drawTexturedModalRect(i, j, 0, 166, 140, 32);
+                this.drawTexturedModalRect(var1, var2, 0, 166, 140, 32);
 
                 if (potion.hasStatusIcon())
                 {
                     int var9 = potion.getStatusIconIndex();
-                    this.drawTexturedModalRect(i + 6, j + 7, 0 + var9 % 8 * 18, 198 + var9 / 8 * 18, 18, 18);
+                    this.drawTexturedModalRect(var1 + 6, var2 + 7, 0 + var9 % 8 * 18, 198 + var9 / 8 * 18, 18, 18);
                 }
 
-                String s1 = StatCollector.translateToLocal(potion.getName());
+                String var11 = StatCollector.translateToLocal(potion.getName());
 
-                if (potioneffect.getAmplifier() == 1)
+                if (effect.getAmplifier() == 1)
                 {
-                    s1 = s1 + " II";
+                    var11 = var11 + " II";
                 }
-                else if (potioneffect.getAmplifier() == 2)
+                else if (effect.getAmplifier() == 2)
                 {
-                    s1 = s1 + " III";
+                    var11 = var11 + " III";
                 }
-                else if (potioneffect.getAmplifier() == 3)
+                else if (effect.getAmplifier() == 3)
                 {
-                    s1 = s1 + " IV";
+                    var11 = var11 + " IV";
                 }
 
-                this.fontRenderer.drawStringWithShadow(s1, i + 10 + 18, j + 6, 16777215);
-                String s = Potion.getDurationString(potioneffect);
-                this.fontRenderer.drawStringWithShadow(s, i + 10 + 18, j + 6 + 10, 8355711);
+                this.fontRenderer.drawStringWithShadow(var11, var1 + 10 + 18, var2 + 6, 16777215);
+                String var10 = Potion.getDurationString(effect);
+                this.fontRenderer.drawStringWithShadow(var10, var1 + 10 + 18, var2 + 6 + 10, 8355711);
                 
-                j += l;
+                var2 += var5;
             }
         }
-    }
-    
-    private ArrayList<PotionEffect> sortPotionByDuration(Collection<PotionEffect> collection) {
-    	ArrayList<PotionEffect> effectlist = new ArrayList<PotionEffect>();
-        for (PotionEffect potioneffect : collection) {
-        	effectlist.add(potioneffect);
-        }
-        Collections.sort(effectlist, new Comparator<PotionEffect>() {
-			@Override
-			public int compare(PotionEffect o1, PotionEffect o2) {
-				if (o1.getIsAmbient()) {
-					return -1;
-				} else if (o2.getIsAmbient()) {
-					return 1;
-				} else {
-					return Integer.compare(o2.getDuration(), o1.getDuration());
-				}
-			}
-        });
-        return effectlist;
-    }
-    
-    private Properties loadConfig() {
-    	File configFile = configPath();
-    	Properties config = new Properties();
-    	
-    	try {
-			FileReader reader = new FileReader(configFile);
-			config.load(reader);
-			reader.close();
-		} catch (FileNotFoundException e) {
-			System.out.println("Potion HUD config file not found. Creating...");
-			config = createDefaultConfig();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-    	
-    	return config;
-    }
-    
-    private Properties createDefaultConfig() {
-    	File configFile = configPath();
-    	Properties config = new Properties();
-    	
-    	config.setProperty("potionpush", "auto");
-    	
-    	try {
-    		configFile.getParentFile().mkdirs();
-			FileWriter writer = new FileWriter(configFile);
-			config.store(writer, "Potion HUD Config");
-			writer.close();
-			System.out.println("Potion HUD config created at: " + configFile.getPath());
-		} catch (IOException e) {
-			System.out.println("Cannot create Potion HUD config file: " + e.getMessage());
-		}
-    	
-    	return config;
-    }
-    
-    private File configPath() {
-    	return new File(new File(Minecraft.getMinecraftDir(), "config"), "potionhud.cfg");
     }
 }
