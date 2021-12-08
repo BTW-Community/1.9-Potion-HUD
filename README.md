@@ -1,5 +1,5 @@
 # 1.9 Potion HUD Addon
-This addon ports over the potion HUD from 1.9 Vanilla. ![Here's a preview of it working in BTW](https://imgur.com/f7NCovU.gif)
+This addon ports over the potion HUD from 1.9 Vanilla. [Here's a preview of it working in BTW](https://imgur.com/f7NCovU)
 
 [Download](https://github.com/BTW-Community/1.9-Potion-HUD/releases/latest)
 
